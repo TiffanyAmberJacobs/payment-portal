@@ -1,25 +1,48 @@
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Employee = require('../models/Employee');
 
-export function requireAuth(req, res, next) {
-  const token = req.cookies?.token;
-  if (!token) return res.status(401).json({ message: 'Not authenticated' });
+const authMiddleware = async (req, res, next) => {
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
-  }
-}
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-// specialized employee auth (employee role must be set in JWT)
-export function requireEmployee(req, res, next) {
-  requireAuth(req, res, () => {
-    if (!req.user?.isEmployee) {
-      return res.status(403).json({ message: 'Employee access only' });
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
     }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Find user based on role
+    let user;
+    if (decoded.role === 'employee') {
+      user = await Employee.findById(decoded.id).select('-password');
+    } else {
+      user = await User.findById(decoded.id).select('-password');
+    }
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid token or user inactive' });
+    }
+
+    // Attach user to request
+    req.user = {
+      id: user._id,
+      role: decoded.role
+    };
+
     next();
-  });
-}
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+};
+
+module.exports = authMiddleware;

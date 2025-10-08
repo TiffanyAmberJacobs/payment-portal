@@ -1,12 +1,30 @@
-// Strict whitelist regex patterns
-export const patterns = {
-  fullName: /^[A-Za-z\s'\-]{2,100}$/,           // letters, spaces, apostrophes, hyphens
-  idNumber: /^\d{13}$/,                         // South African ID is 13 digits (example)
-  accountNumber: /^\d{8,20}$/,                  // numeric account, 8-20 digits
-  password: /^[\S]{8,128}$/,                    // no whitespace, 8-128 chars (we store only hash)
-  amount: /^\d+(\.\d{1,2})?$/,                  // decimal with up to 2 dp
-  currency: /^[A-Z]{3}$/,                       // ISO currency code (USD, ZAR, EUR)
-  swift: /^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$/, // SWIFT/BIC strict-ish
-  provider: /^[A-Za-z0-9\s\-\_\.]{1,50}$/,
-  description: /^[\w\s\-\.,'()]{0,200}$/
+/**
+ * Regex patterns for input validation
+ */
+
+// Password: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+
+// Email validation
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// South African ID Number (13 digits)
+const idNumberRegex = /^[0-9]{13}$/;
+
+// SWIFT Code (8 or 11 characters)
+const swiftCodeRegex = /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
+
+// Account Number (10-20 alphanumeric)
+const accountNumberRegex = /^[A-Za-z0-9]{10,20}$/;
+
+// Employee ID (EMP followed by 6 digits)
+const employeeIdRegex = /^EMP[0-9]{6}$/;
+
+module.exports = {
+  passwordRegex,
+  emailRegex,
+  idNumberRegex,
+  swiftCodeRegex,
+  accountNumberRegex,
+  employeeIdRegex
 };

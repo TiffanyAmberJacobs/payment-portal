@@ -1,16 +1,48 @@
-# React + Vite
+# 🏦 International Payments Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A secure full-stack CRUD system for managing international payments with customer and employee portals.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Customer Portal
+- User registration with encrypted data
+- Secure login with JWT authentication
+- Make international payments
+- View payment history
+- Edit/delete pending payments
 
-## React Compiler
+### Employee Portal
+- Employee authentication
+- View all customer transactions
+- Verify/approve payments
+- Search and filter transactions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+**Frontend:**
+- React 18
+- Vite
+- Axios
+- React Router DOM
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Backend:**
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT Authentication
+- bcryptjs for password hashing
+- express-validator for input validation
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js (v18+)
+- MongoDB (local or Atlas)
+- Git
+
+### Setup Steps
+
+1. **Clone the repository**
+```bash
+git clone <your-repo-url>
+cd intl-payments

@@ -1,26 +1,87 @@
-import mongoose from 'mongoose';
-import { encryptField, decryptField } from '../utils/cryptoField.js';
-const { Schema } = mongoose;
+const mongoose = require('mongoose');
+const { encryptField, decryptField } = require('../utils/cryptoField');
 
-const TransactionSchema = new Schema({
-  customerId: { type: mongoose.Types.ObjectId, required: true, ref: 'User' },
-  amount: { type: String, required: true },  // store as string to keep exactness; whitelist ensures format
-  currency: { type: String, required: true },
-  provider: { type: String, required: true },
-  payeeAccountEncrypted: { type: String, required: true },
-  payeeSWIFT: { type: String, required: true },
-  description: { type: String },
-  status: { type: String, enum: ['pending','verified','submitted'], default: 'pending' },
-  submittedByEmployee: { type: mongoose.Types.ObjectId, ref: 'Employee' },
-  createdAt: { type: Date, default: Date.now },
-  verifiedAt: { type: Date }
+const transactionSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: [true, 'Amount is required'],
+    min: [1, 'Amount must be at least 1']
+  },
+  currency: {
+    type: String,
+    required: true,
+    enum: ['USD', 'EUR', 'GBP', 'ZAR', 'JPY'],
+    default: 'USD'
+  },
+  provider: {
+    type: String,
+    required: true,
+    enum: ['SWIFT', 'PayPal', 'Western Union', 'MoneyGram']
+  },
+  recipientAccount: {
+    type: String,
+    required: [true, 'Recipient account is required']
+  },
+  swiftCode: {
+    type: String,
+    validate: {
+      validator: function(v) {
+        if (this.provider === 'SWIFT' && v) {
+          return /^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(v);
+        }
+        return true;
+      },
+      message: 'Invalid SWIFT code format'
+    }
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'verified', 'completed', 'rejected'],
+    default: 'pending'
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Employee'
+  },
+  verifiedAt: Date,
+  notes: String
+}, {
+  timestamps: true
 });
 
-TransactionSchema.methods.setPayee = function(accountNumber) {
-  this.payeeAccountEncrypted = encryptField(accountNumber);
-};
-TransactionSchema.methods.getPayee = function() {
-  return decryptField(this.payeeAccountEncrypted);
+// Encrypt sensitive fields before saving
+transactionSchema.pre('save', function(next) {
+  if (this.isModified('recipientAccount')) {
+    this.recipientAccount = encryptField(this.recipientAccount);
+  }
+  if (this.isModified('swiftCode') && this.swiftCode) {
+    this.swiftCode = encryptField(this.swiftCode);
+  }
+  next();
+});
+
+// Method to get decrypted transaction
+transactionSchema.methods.getDecryptedData = function() {
+  return {
+    _id: this._id,
+    userId: this.userId,
+    amount: this.amount,
+    currency: this.currency,
+    provider: this.provider,
+    recipientAccount: decryptField(this.recipientAccount),
+    swiftCode: this.swiftCode ? decryptField(this.swiftCode) : null,
+    status: this.status,
+    verifiedBy: this.verifiedBy,
+    verifiedAt: this.verifiedAt,
+    notes: this.notes,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt
+  };
 };
 
-export default mongoose.model('Transaction', TransactionSchema);
+module.exports = mongoose.model('Transaction', transactionSchema);

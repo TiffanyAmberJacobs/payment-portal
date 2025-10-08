@@ -1,76 +1,86 @@
-import express from 'express';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import xss from 'xss-clean';
-import mongoSanitize from 'express-mongo-sanitize';
-import dotenv from 'dotenv';
-import { connectDB } from './Config/db.js';
-import authRoutes from './routes/auth.js';
-import customerRoutes from './routes/customer.js';
-import employeeRoutes from './routes/employee.js';
-import { apiLimiter } from './middleware/rateLimit.js';
-import { requireHTTPS } from './middleware/httpsRedirect.js';
-import fs from 'fs';
-import https from 'https';
-dotenv.config();
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const connectDB = require('./config/db');
+const rateLimiter = require('./middleware/rateLimit');
+const httpsRedirect = require('./middleware/httpsRedirect');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const customerRoutes = require('./routes/customer');
+const employeeRoutes = require('./routes/employee');
 
 const app = express();
 
-app.use(helmet());
-app.use(morgan('tiny'));
-app.use(express.json({ limit: '10kb' }));
-app.use(cookieParser());
-app.use(xss());
-app.use(mongoSanitize());
-app.use(apiLimiter);
-app.use(requireHTTPS);
+// Connect to MongoDB
+connectDB();
 
-// CORS: restrict to client origin
-const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
-app.use(cors({
-  origin: clientOrigin,
+// Security Middleware
+app.use(helmet()); // Security headers
+if (process.env.NODE_ENV === 'production') {
+  app.use(httpsRedirect); // Force HTTPS in production
+}
+
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
-}));
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Body Parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Rate Limiting
+app.use(rateLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/employee', employeeRoutes);
 
-// Generic error handler
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: 'Server error' });
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV 
+  });
 });
 
-const PORT = process.env.PORT || 4000;
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'International Payments API',
+    version: '1.0.0',
+    status: 'running'
+  });
+});
 
-async function start() {
-  await connectDB();
-  if (process.env.NODE_ENV === 'production') {
-    // In production, terminate here and let nginx/ALB handle TLS and proxying
-    app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
-  } else {
-    // Dev: optionally start HTTPS server with self-signed certs if available
-    const keyPath = './certs/key.pem';
-    const certPath = './certs/cert.pem';
-    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-      const options = {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath)
-      };
-      https.createServer(options, app).listen(PORT, () => {
-        console.log(`HTTPS Dev server listening on https://localhost:${PORT}`);
-      });
-    } else {
-      app.listen(PORT, () => console.log(`HTTP Dev server listening on http://localhost:${PORT}`));
-    }
-  }
-}
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
-start().catch(err => {
-  console.error(err);
-  process.exit(1);
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log('═══════════════════════════════════════════');
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 API: http://localhost:${PORT}`);
+  console.log(`💚 Health: http://localhost:${PORT}/api/health`);
+  console.log('═══════════════════════════════════════════');
 });

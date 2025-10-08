@@ -1,27 +1,50 @@
-// AES-256-GCM field-level encryption helpers
-import crypto from 'crypto';
-const key = Buffer.from(process.env.FIELD_ENCRYPTION_KEY || '', 'base64');
-if (key.length !== 32) {
-  console.warn('FIELD_ENCRYPTION_KEY should be 32 bytes (base64).');
-}
+const crypto = require('crypto');
 
-export function encryptField(plaintext) {
-  if (!plaintext) return '';
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const encrypted = Buffer.concat([cipher.update(String(plaintext), 'utf8'), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return `${iv.toString('base64')}:${tag.toString('base64')}:${encrypted.toString('base64')}`;
-}
+// Get encryption key from environment or use default (change in production!)
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-character-secret-key!!';
 
-export function decryptField(payload) {
-  if (!payload) return '';
-  const [ivB64, tagB64, dataB64] = String(payload).split(':');
-  const iv = Buffer.from(ivB64, 'base64');
-  const tag = Buffer.from(tagB64, 'base64');
-  const encrypted = Buffer.from(dataB64, 'base64');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(tag);
-  const out = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return out.toString('utf8');
-}
+// Ensure key is exactly 32 bytes
+const key = Buffer.from(ENCRYPTION_KEY.padEnd(32, '!').slice(0, 32), 'utf-8');
+
+const algorithm = 'aes-256-cbc';
+const iv = Buffer.alloc(16, 0); // Initialization vector
+
+/**
+ * Encrypt a string field
+ * @param {string} text - Plain text to encrypt
+ * @returns {string} - Encrypted text in hex format
+ */
+const encryptField = (text) => {
+  try {
+    if (!text) return text;
+    
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
+  } catch (error) {
+    console.error('Encryption error:', error);
+    throw new Error('Encryption failed');
+  }
+};
+
+/**
+ * Decrypt an encrypted field
+ * @param {string} encryptedText - Encrypted text in hex format
+ * @returns {string} - Decrypted plain text
+ */
+const decryptField = (encryptedText) => {
+  try {
+    if (!encryptedText) return encryptedText;
+    
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    throw new Error('Decryption failed');
+  }
+};
+
+module.exports = { encryptField, decryptField };
