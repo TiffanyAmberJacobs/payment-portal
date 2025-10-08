@@ -23,6 +23,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🔐 Login form submitted!');
+    console.log('Login type:', loginType);
+    console.log('Form data:', formData);
+    
     setError('');
     setLoading(true);
 
@@ -35,7 +39,11 @@ const Login = () => {
         )
       };
 
+      console.log('📤 Sending login data:', loginData);
+
       const response = await authAPI.login(loginData);
+      
+      console.log('✅ Login successful:', response.data);
       
       // Store token and user data
       localStorage.setItem('token', response.data.token);
@@ -48,6 +56,8 @@ const Login = () => {
         navigate('/customer');
       }
     } catch (err) {
+      console.error('❌ Login error:', err);
+      console.error('❌ Error response:', err.response);
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

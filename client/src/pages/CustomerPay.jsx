@@ -54,7 +54,20 @@ const CustomerPay = () => {
     }
 
     try {
-      await customerAPI.createPayment(formData);
+      // Only include swiftCode if provider is SWIFT
+      const paymentData = {
+        amount: formData.amount,
+        currency: formData.currency,
+        provider: formData.provider,
+        recipientAccount: formData.recipientAccount
+      };
+
+      // Only add swiftCode if provider is SWIFT and swiftCode exists
+      if (formData.provider === 'SWIFT' && formData.swiftCode) {
+        paymentData.swiftCode = formData.swiftCode;
+      }
+
+      await customerAPI.createPayment(paymentData);
       setSuccess('Payment submitted successfully!');
       
       setFormData({
@@ -189,6 +202,7 @@ const CustomerPay = () => {
                   placeholder="ABCDUS33XXX"
                   pattern="[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?"
                   maxLength={11}
+                  required={formData.provider === 'SWIFT'}
                 />
                 <small>Format: 6 letters (bank) + 2 letters (country) + 2 digits + optional 3 chars</small>
               </div>

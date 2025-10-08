@@ -23,12 +23,18 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // CORS Configuration
+// CORS Configuration
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'http://localhost:5174', // Changed from 5173 to 5174
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Add methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Add headers
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
 
 // Body Parser
 app.use(express.json());

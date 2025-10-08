@@ -27,10 +27,17 @@ router.post('/register', [
   body('password').matches(passwordRegex).withMessage('Password must be at least 8 characters with uppercase, lowercase, number, and special character')
 ], validateInput, async (req, res) => {
   try {
+    console.log('📝 Registration attempt:', {
+      fullName: req.body.fullName,
+      email: req.body.email,
+      accountNumber: req.body.accountNumber
+    });
+
     const { fullName, idNumber, accountNumber, email, password } = req.body;
 
     // Encrypt account number to check for existing user
     const encryptedAccountNumber = encryptField(accountNumber);
+    console.log('🔐 Encrypted account number for lookup');
 
     // Check if user exists
     const existingUser = await User.findOne({ 
@@ -41,8 +48,11 @@ router.post('/register', [
     });
 
     if (existingUser) {
+      console.log('❌ User already exists');
       return res.status(400).json({ error: 'User already exists with this email or account number' });
     }
+
+    console.log('✅ Creating new user...');
 
     // Create user
     const user = await User.create({
@@ -53,6 +63,8 @@ router.post('/register', [
       password
     });
 
+    console.log('✅ User created successfully:', user._id);
+
     // Generate token
     const token = generateToken(user._id, user.role);
 
@@ -62,7 +74,7 @@ router.post('/register', [
       user: user.getDecryptedData()
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('❌ Registration error:', error);
     res.status(500).json({ error: 'Registration failed', details: error.message });
   }
 });
@@ -76,6 +88,12 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Password is required')
 ], validateInput, async (req, res) => {
   try {
+    console.log('🔐 Login attempt:', {
+      accountNumber: req.body.accountNumber,
+      employeeId: req.body.employeeId,
+      hasPassword: !!req.body.password
+    });
+
     const { accountNumber, employeeId, password } = req.body;
 
     let user;
@@ -83,28 +101,43 @@ router.post('/login', [
 
     // Check if employee login
     if (employeeId) {
+      console.log('👔 Employee login attempt');
       user = await Employee.findOne({ employeeId, isActive: true }).select('+password');
       role = 'employee';
     } 
     // Customer login
     else if (accountNumber) {
+      console.log('👤 Customer login attempt');
       // Encrypt the account number to search in database
       const encryptedAccountNumber = encryptField(accountNumber);
+      console.log('🔐 Searching for user with encrypted account number');
+      
       user = await User.findOne({ accountNumber: encryptedAccountNumber, isActive: true }).select('+password');
+      console.log('👤 User found:', user ? 'YES' : 'NO');
+      
       role = 'customer';
     } else {
+      console.log('❌ No credentials provided');
       return res.status(400).json({ error: 'Please provide account number or employee ID' });
     }
 
     if (!user) {
+      console.log('❌ User not found in database');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('✅ User found, checking password...');
+
     // Check password
     const isMatch = await user.comparePassword(password);
+    console.log('🔑 Password match:', isMatch ? 'YES' : 'NO');
+    
     if (!isMatch) {
+      console.log('❌ Password does not match');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    console.log('✅ Login successful');
 
     // Generate token
     const token = generateToken(user._id, role);
@@ -130,7 +163,7 @@ router.post('/login', [
       user: userData
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     res.status(500).json({ error: 'Login failed', details: error.message });
   }
 });
@@ -146,10 +179,13 @@ router.post('/register-employee', [
   body('department').isIn(['payments', 'verification', 'admin']).withMessage('Invalid department')
 ], validateInput, async (req, res) => {
   try {
+    console.log('👔 Employee registration attempt:', req.body.employeeId);
+
     const { fullName, employeeId, email, password, department } = req.body;
 
     const existing = await Employee.findOne({ $or: [{ email: email.toLowerCase() }, { employeeId }] });
     if (existing) {
+      console.log('❌ Employee already exists');
       return res.status(400).json({ error: 'Employee already exists with this email or employee ID' });
     }
 
@@ -160,6 +196,8 @@ router.post('/register-employee', [
       password,
       department
     });
+
+    console.log('✅ Employee created:', employee._id);
 
     res.status(201).json({
       message: 'Employee registered successfully',
@@ -172,7 +210,7 @@ router.post('/register-employee', [
       }
     });
   } catch (error) {
-    console.error('Employee registration error:', error);
+    console.error('❌ Employee registration error:', error);
     res.status(500).json({ error: 'Registration failed', details: error.message });
   }
 });
