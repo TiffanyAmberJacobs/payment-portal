@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customerAPI } from '../api';
 import TransactionRow from '../components/TransactionRow';
+import { FaCircleDollarToSlot } from "react-icons/fa6";
 
 const CustomerPay = () => {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ const CustomerPay = () => {
 
       <div className="dashboard-content">
         <section className="card">
-          <h2>💸 Make a Payment</h2>
+          <h2><FaCircleDollarToSlot /> Make a Payment</h2>
           
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
