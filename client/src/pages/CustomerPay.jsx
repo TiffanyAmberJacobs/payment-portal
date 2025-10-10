@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { customerAPI } from '../api';
 import TransactionRow from '../components/TransactionRow';
 import { FaCircleDollarToSlot } from "react-icons/fa6";
+import { FaHouseUser } from "react-icons/fa";
+import { FaFileInvoiceDollar } from "react-icons/fa";
 
 const CustomerPay = () => {
   const navigate = useNavigate();
@@ -109,7 +111,7 @@ const CustomerPay = () => {
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>🏦 Customer Payment Portal</h1>
+          <h1><FaHouseUser /> Customer Payment Portal</h1>
           <div className="user-info">
             <span>Welcome, <strong>{user?.fullName}</strong></span>
             <button onClick={handleLogout} className="btn-secondary">Logout</button>
@@ -216,7 +218,7 @@ const CustomerPay = () => {
         </section>
 
         <section className="card">
-          <h2>📋 Your Transactions</h2>
+          <h2><FaFileInvoiceDollar /> Your Transactions</h2>
           {transactions.length === 0 ? (
             <p className="empty-state">No transactions yet. Make your first payment above!</p>
           ) : (
