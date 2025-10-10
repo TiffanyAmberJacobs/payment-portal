@@ -151,7 +151,7 @@ cd intl-payments
 ---
 ## 🎥 YouTube Demo
 Check out the project in action on YouTube:  
-[![Watch the video](https://img.shields.io/badge/Watch%20on-YouTube-red?logo=youtube)]([https://www.youtube.com/watch?v=YOUR_VIDEO_ID](https://youtu.be/sNGG1rP6kvw)
+[![Watch the video](https://youtu.be/sNGG1rP6kvw)
 
 ---
 
