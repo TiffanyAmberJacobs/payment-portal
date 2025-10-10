@@ -7,6 +7,7 @@ A secure full-stack CRUD system for managing international payments with custome
 ![MongoDB](https://img.shields.io/badge/MongoDB-6+-green)
 ![License](https://img.shields.io/badge/license-ISC-blue)
 
+---
 ## 🔖 Security Measures Implemented from Task 1
 
 | Threat | Protection | Details |
@@ -17,6 +18,15 @@ A secure full-stack CRUD system for managing international payments with custome
 | **Cross-site scripting (XSS)** | Input sanitization, output encoding, CSP | - Inputs validated via `express-validator` <br> - Output encoding assumed when sending data <br> - CSP headers restrict scripts and resources |
 | **Man-in-the-middle (MITM)** | HTTPS, strong passwords, software updates | - Server runs on HTTPS (`https://localhost:5000`) <br> - Passwords must meet complexity rules (uppercase, lowercase, number, special char) <br> - Node.js and dependencies kept up to date |
 | **Distributed Denial of Service (DDoS)** | Rate limiting, potential WAF | - `express-rate-limit` limits login attempts (`max: 5`) and registrations (`max: 10`) <br> - Optional Redis-backed rate limiter can scale for production <br> - WAF could be added at infrastructure level |
+
+---
+## Team Members & Responsibilities
+
+| Name | Student Number | Assigned Tasks |
+|------|----------------|----------------|
+| Samkelo Maswana | ST10141464 | Session Implementation, API Connectivity and Database |
+| Tiffany-Amber Jacobs | ST10085839 | Front-End Design and Functionality, API Creation|
+| Joshua Sutherland | ST10255930 | Security Integration for Click Jacking, SQL Injeciton, XSS, Man-In-The-Middle & DDoS |
 
 ---
 
