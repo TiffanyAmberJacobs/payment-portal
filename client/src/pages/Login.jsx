@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../api';
+import { FaMoneyBillTransfer } from "react-icons/fa6";
+import { FaRegUser } from "react-icons/fa6";
+import { FaUserLock } from "react-icons/fa6";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,7 +26,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('🔐 Login form submitted!');
+    console.log('Login form submitted!');
     console.log('Login type:', loginType);
     console.log('Form data:', formData);
     
@@ -39,11 +42,11 @@ const Login = () => {
         )
       };
 
-      console.log('📤 Sending login data:', loginData);
+      console.log('Sending login data:', loginData);
 
       const response = await authAPI.login(loginData);
       
-      console.log('✅ Login successful:', response.data);
+      console.log('Login successful:', response.data);
       
       // Store token and user data
       localStorage.setItem('token', response.data.token);
@@ -56,8 +59,8 @@ const Login = () => {
         navigate('/customer');
       }
     } catch (err) {
-      console.error('❌ Login error:', err);
-      console.error('❌ Error response:', err.response);
+      console.error('Login error:', err);
+      console.error('Error response:', err.response);
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -67,8 +70,9 @@ const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>🏦 International Payments</h1>
-        <p className="subtitle">Secure Payment Portal</p>
+        <h1><FaMoneyBillTransfer /></h1>
+        <h1>Secure and Easy International Payments</h1>
+        <p className="subtitle">Securely send and manage your international payments.</p>
 
         {/* Login Type Selector */}
         <div className="login-type-selector">
@@ -81,7 +85,7 @@ const Login = () => {
               setError('');
             }}
           >
-            👤 Customer
+            <FaRegUser /> Customer
           </button>
           <button
             type="button"
@@ -92,7 +96,7 @@ const Login = () => {
               setError('');
             }}
           >
-            💼 Employee
+            <FaUserLock /> Employee
           </button>
         </div>
 
