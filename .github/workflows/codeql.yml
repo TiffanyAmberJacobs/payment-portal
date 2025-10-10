@@ -24,8 +24,6 @@ jobs:
         include:
         - language: javascript
           build-mode: none
-        - language: html
-          build-mode: none
 
     steps:
     - name: Checkout repository
