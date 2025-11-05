@@ -1,4 +1,3 @@
-cat > server/.dockerignore << 'DOCKEREOF'
 node_modules
 npm-debug.log
 .env
@@ -11,4 +10,3 @@ coverage
 .nyc_output
 dist
 build
-DOCKEREOF
