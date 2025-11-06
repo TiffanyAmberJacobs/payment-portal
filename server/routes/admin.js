@@ -13,18 +13,33 @@ router.use(authMiddleware);
 // Check if user is admin
 const adminOnly = async (req, res, next) => {
   try {
-    if (req.user.role !== 'employee') {
-      return res.status(403).json({ error: 'Access denied. Not authenticated as employee.' });
+    console.log('🔒 Admin check for user:', req.user);
+    
+    // Check if user role from token is admin (fastest check)
+    if (req.user.role === 'admin') {
+      console.log('✅ Admin access granted via token role');
+      return next();
     }
     
-    // Check if user is actually an admin
+    // Fallback: Fetch from database to double-check
     const employee = await Employee.findById(req.user.id);
-    if (!employee || employee.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    console.log('👤 Employee found in DB:', employee ? employee.role : 'not found');
+    
+    if (!employee) {
+      console.log('❌ Employee not found in database');
+      return res.status(403).json({ error: 'Employee not found' });
     }
+    
+    // Check if employee has admin role
+    if (employee.role !== 'admin') {
+      console.log('❌ Employee is not admin role, actual role:', employee.role);
+      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    }
+    
+    console.log('✅ Admin access granted via database check');
     next();
   } catch (err) {
-    console.error('Admin check error:', err);
+    console.error('❌ Admin check error:', err);
     res.status(500).json({ error: 'Authorization failed' });
   }
 };
@@ -36,7 +51,10 @@ router.use(adminOnly);
 // @access  Private (Admin)
 router.get('/employees', async (req, res) => {
   try {
+    console.log('📋 Fetching all employees');
     const employees = await Employee.find().select('-password');
+    
+    console.log(`✅ Found ${employees.length} employees`);
     
     res.json({
       count: employees.length,
@@ -52,7 +70,7 @@ router.get('/employees', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get employees error:', error);
+    console.error('❌ Get employees error:', error);
     res.status(500).json({ error: 'Failed to fetch employees' });
   }
 });

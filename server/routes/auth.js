@@ -16,6 +16,68 @@ const generateToken = (id, role) => {
   });
 };
 
+// ⚠️ BOOTSTRAP ROUTE - REMOVE AFTER CREATING FIRST ADMIN!
+// @route   POST /api/auth/bootstrap-admin
+// @desc    Create first admin account (ONE-TIME USE ONLY)
+// @access  Public (REMOVE THIS ROUTE AFTER FIRST ADMIN IS CREATED!)
+router.post('/bootstrap-admin', async (req, res) => {
+  try {
+    console.log('🔧 Bootstrap admin attempt...');
+    
+    // Check if any admin exists
+    const existingAdmin = await Employee.findOne({ role: 'admin' });
+    if (existingAdmin) {
+      console.log('⚠️ Admin already exists');
+      return res.status(400).json({ 
+        error: 'Admin already exists! This endpoint should be removed.',
+        existingAdmin: {
+          email: existingAdmin.email,
+          employeeId: existingAdmin.employeeId,
+          fullName: existingAdmin.fullName
+        }
+      });
+    }
+
+    // Create first admin
+    const admin = await Employee.create({
+      fullName: 'System Administrator',
+      employeeId: 'EMP000001',
+      email: 'admin@company.com',
+      password: 'Admin@123456',
+      role: 'admin',
+      department: 'admin',
+      isActive: true
+    });
+
+    console.log('✅ Bootstrap admin created:', admin.employeeId);
+    
+    res.json({ 
+      success: true,
+      message: '✅ First admin created successfully!',
+      admin: {
+        _id: admin._id,
+        email: admin.email,
+        employeeId: admin.employeeId,
+        fullName: admin.fullName,
+        role: admin.role,
+        department: admin.department
+      },
+      credentials: {
+        employeeId: admin.employeeId,
+        password: 'Admin@123456'
+      },
+      loginInstructions: 'Use employeeId (not accountNumber) to login',
+      warning: '⚠️ CRITICAL: Remove this endpoint immediately and change the password!'
+    });
+  } catch (error) {
+    console.error('❌ Bootstrap error:', error);
+    res.status(500).json({ 
+      error: 'Failed to create admin',
+      details: error.message 
+    });
+  }
+});
+
 // @route   POST /api/auth/register
 // @desc    Register new customer
 // @access  Public
@@ -84,7 +146,7 @@ router.post('/register', [
 // @access  Public
 router.post('/login', [
   body('accountNumber').optional().isLength({ min: 5 }).withMessage('Invalid account number'),
-  body('employeeId').optional().matches(/^EMP[0-9]{6}$/).withMessage('Invalid employee ID format'),
+  body('employeeId').optional().isString().withMessage('Invalid employee ID format'),
   body('password').notEmpty().withMessage('Password is required')
 ], validateInput, async (req, res) => {
   try {
@@ -97,14 +159,16 @@ router.post('/login', [
     const { accountNumber, employeeId, password } = req.body;
 
     let user;
-    let role;
 
     // Check if employee login
     if (employeeId) {
       console.log('👔 Employee login attempt');
       user = await Employee.findOne({ employeeId, isActive: true }).select('+password');
-      // ✅ FIX: Use the actual role from employee document (employee or admin)
-      role = user ? user.role : 'employee';
+      
+      if (!user) {
+        console.log('❌ Employee not found in database');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
     } 
     // Customer login
     else if (accountNumber) {
@@ -116,15 +180,13 @@ router.post('/login', [
       user = await User.findOne({ accountNumber: encryptedAccountNumber, isActive: true }).select('+password');
       console.log('👤 User found:', user ? 'YES' : 'NO');
       
-      role = 'customer';
+      if (!user) {
+        console.log('❌ User not found in database');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
     } else {
       console.log('❌ No credentials provided');
       return res.status(400).json({ error: 'Please provide account number or employee ID' });
-    }
-
-    if (!user) {
-      console.log('❌ User not found in database');
-      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     console.log('✅ User found, checking password...');
@@ -138,14 +200,14 @@ router.post('/login', [
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    console.log('✅ Login successful');
+    console.log('✅ Login successful for role:', user.role);
 
-    // Generate token with the correct role
-    const token = generateToken(user._id, role);
+    // Generate token with the ACTUAL role from the database
+    const token = generateToken(user._id, user.role);
 
     // Prepare user data
     let userData;
-    if (role === 'customer') {
+    if (user.role === 'customer') {
       userData = user.getDecryptedData();
     } else {
       // For employees and admins
@@ -154,7 +216,7 @@ router.post('/login', [
         fullName: user.fullName,
         employeeId: user.employeeId,
         email: user.email,
-        role: user.role,  // ✅ This will be 'employee' or 'admin'
+        role: user.role,  // This will be 'employee' or 'admin'
         department: user.department
       };
     }
